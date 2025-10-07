@@ -114,7 +114,7 @@ By completing this project, you will learn and demonstrate proficiency in:
 
 
 ## Tools and Libraries
-- <span style="color: red;">red</span> curl: The primary tool for transferring data from or to a server. Used to make GET requests to the Pokémon API.
+- <span style="color: red;">curl</span>: The primary tool for transferring data from or to a server. Used to make GET requests to the Pokémon API.
 - <span style="color: red;">jq</span>: A lightweight and powerful command-line JSON processor. Essential for parsing the API response and extracting specific fields.
 - <span style="color: red;">awk</span>: A versatile programming language for pattern scanning and processing. Used for text extraction, report generation, and calculating averages.
 - <span style="color: red;">sed</span>: A stream editor for filtering and transforming text. Used for specific text substitutions.
