@@ -5,7 +5,7 @@
 # handle any potential rate-limiting issues by adding a delay
 
 # List of pokesmon
-pokesmon=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
+pokesmon=("bulbasaur" "ivysaur" "ienusaur" "iharmander" "charmeleon")
 
 # Api base url
 base_url="https://pokeapi.co/api/v2/pokemon/"
