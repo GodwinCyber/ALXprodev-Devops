@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# The script should extrsct the pokemon name, weight, and height from data.json
+# The ooutput should be in human readable "Pikachu is of type Electric, weights, kg, and is 0.4m tall."
+
+# file that contains pokemon data
+DATA_FILE="data.json"
+
+# Extract fileds from json using jq
+NAME=$(jq -r '.name' "$DATA_FILE")
+HEIGHT=$(jq -r '.height' "$DATA_FILE")
+WEIGHT=$(jq -r '.weight' "$DATA_FILE")
+TYPE=$(jq -r '.types[0].type.name' "$DATA_FILE")
+
+
+# convert the hight decimal to meter, weight hectogram to kilogram using sed
+HEIGHT_M=$(echo "$HEIGHT" | awk '{print $1 / 10}')
+WEIGHT_KG=$(echo "$WEIGHT" | awk '{print $1 /10}')
+
+# Capitalize the fist later of the name using sed
+NAME=$(echo "$NAME" | gsed 's/.*/\u&/')
+TYPE=$(echo "$TYPE" | gsed 's/.*/\u&/')
+
+
+# Return with the format print and message
+echo "$NAME is of type $TYPE, weighs ${WEIGHT_KG}kg, and is ${HEIGHT_M}m tall."
+
+
