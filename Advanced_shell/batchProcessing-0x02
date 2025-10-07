@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Loop through a list of Pokemon and store in the separate file
+# For each Pokemon, retrieve its data fromt the api and save it to separate file
+# handle any potential rate-limiting issues by adding a delay
+
+# List of pokesmon
+pokesmon=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
+
+# Api base url
+base_url="https://pokeapi.co/api/v2/pokemon/"
+
+# Directory to store Pokemon data
+output_dir="pokemon_data"
+mkdir -p "$output_dir"
+
+# Loop through each postman in the list
+for pokemon in "${pokesmon[@]}"; do
+    echo "Fetching data for $pokemon..."
+
+    pokemon_lower=$(echo "$pokemon" | tr '[:upper:]' '[:lower:]')
+    
+    # File path
+    file_path="$output_dir/${pokemon}.json"
+
+    # Make API request and save response to aa file name after Pokemon
+    curl -s -o "$file_path" "${base_url}${pokemon_lower}"
+
+    # Check if the file contains valid JSON 
+    if jq empty "$file_path" > /dev/null 2>&1; then
+        echo "Sucessfully saved ${pokemon}.json"
+    else
+        echo "Failed to fetchg valid for $pokemon" >> errors.txt
+    fi
+
+    sleep 2
+
+done
+echo "All Pokemon data fetched successfully"
