@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# The script must read all JSON files generated, extract name, height and weight of each pokemon
+# Generate CSV file containing Pokemon name, height, and weight
+# Use awk to calculate the average height, weght of all pokemon in the csv report
+
+data_dir="./pokemon_data"
+report_dir="./pokemon_report"
+report_file="$report_dir/pokemon_report.csv"
+
+# Creat if it does not exist
+mkdir -p "$report_dir"
+
+# Header for csv
+echo "Name,Height(m),Weight(kg)" > "$report_file"
+
+# Ensure the directory exist
+[ -d "$data_dir" ] || { echo "Directory '$data_dir' not found."; exit 1; }
+
+# loop through all the JSON files and extract fields
+for file in "$data_dir"/*.json; do
+    [ -s "$file" ] || { echo "Skipping empty file: $file"; continue; }
+
+    name=$(jq -r '.name' "$file")
+    height=$(jq -r '.height' "$file")
+    weight=$(jq -r '.weight' "$file")
+
+    # Skip the invalid Json
+    if [[ -z "$name" || -z "$height" || -z "$weight" ]]; then
+        echo "Skipping invalid file: $file (missing data)"
+        continue
+    fi
+
+    # Convert the height (decimeter -> meter) and weight (hectogram -> kilogram)
+    formatted_height=$(awk "BEGIN {print $height / 10}")
+    formatted_weight=$(awk "BEGIN {print $weight / 10}")
+
+    # Capilize the Pokémon name
+    name_cap=$(echo "$name" | gsed 's/.*/\u&/')
+
+    # Append to CSV
+    echo "$name_cap,$formatted_height,$formatted_weight" >> "$report_file"
+done
+# Print average height and weight using awk
+echo "" >> "$report_file"
+awk -F',' '
+    NR > 1 && NF == 3 {
+        total_height += $2;
+        total_weight += $3;
+        count++;
+    }
+    END {
+        if (count > 0)
+            printf "Average,%.2f,%.2f\n", total_height / count, total_weight / count;
+    }
+' "$report_file" >> "$report_file"
+echo "Pokémon report generated successfully: $report_file"
+echo ""
+cat "$report_file"
+
+# Extract averages and print them neatly
+avg_height=$(awk -F',' '/Average/ {print $2}' "$report_file")
+avg_weight=$(awk -F',' '/Average/ {print $3}' "$report_file")
+
+echo ""
+echo "Average Height: ${avg_height} m"
+echo "Average Weight: ${avg_weight} kg"
+
+
+
