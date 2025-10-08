@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fetch Pokémon data from the PokéAPI and store each Pokémon's data in separate JSON files.
-# Adds a delay between requests to handle potential rate limits.
+# Adds retry logic and error handling for failed API requests.
 
 # List of Pokémon
 pokemons=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
@@ -13,7 +13,7 @@ base_url="https://pokeapi.co/api/v2/pokemon/"
 output_dir="pokemon_data"
 mkdir -p "$output_dir"
 
-# Clear previous errors
+# Clear previous error log
 > errors.txt
 
 # Loop through each Pokémon in the list
@@ -21,23 +21,46 @@ for pokemon in "${pokemons[@]}"; do
     echo "Fetching data for $pokemon..."
 
     pokemon_lower=$(echo "$pokemon" | tr '[:upper:]' '[:lower:]')
-
-    # File path
     file_path="$output_dir/${pokemon}.json"
 
-    # Make API request and save response
-    curl -s -o "$file_path" "${base_url}${pokemon_lower}"
+    max_retries=3
+    attempt=1
+    success=false
 
-    # Validate JSON
-    if jq empty "$file_path" > /dev/null 2>&1; then
-        echo "Successfully saved ${pokemon}.json"
-    else
-        echo "Failed to fetch valid data for $pokemon" >> errors.txt
-        rm "$file_path"  # Remove invalid file
+    # Retry loop
+    while [ $attempt -le $max_retries ]; do
+        echo "Attempt $attempt for $pokemon..."
+
+        # Perform API request and capture HTTP status code
+        http_status=$(curl -s -w "%{http_code}" -o "$file_path" "${base_url}${pokemon_lower}")
+
+        # Check if request succeeded
+        if [ "$http_status" -eq 200 ]; then
+            if jq empty "$file_path" > /dev/null 2>&1; then
+                echo "Successfully saved ${pokemon}.json"
+                success=true
+                break
+            else
+                echo "Invalid JSON received for $pokemon (attempt $attempt)"
+            fi
+        else
+            echo "Failed to fetch data for $pokemon (HTTP $http_status) on attempt $attempt"
+        fi
+
+        # Wait before retry
+        sleep 2
+        ((attempt++))
+    done
+
+    # After 3 failed attempts, log the error
+    if [ "$success" = false ]; then
+        echo "Failed to fetch valid data for $pokemon after $max_retries attempts." >> errors.txt
+        rm -f "$file_path"  # Remove bad file
     fi
 
-    # Delay to avoid rate-limiting
+    # Delay between Pokémon to avoid rate-limiting
     sleep 2
 done
 
-echo "All Pokémon data fetched successfully."
+echo ""
+echo "All Pokémon data fetched. Check 'errors.txt' for any failed fetches."
