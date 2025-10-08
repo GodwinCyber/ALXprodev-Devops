@@ -1,0 +1,5 @@
+Failed to fetch ivysaur (HTTP 200)
+Failed to fetch bulbasaur (HTTP 200)
+Failed to fetch venusaur (HTTP 200)
+Failed to fetch charmeleon (HTTP 200)
+Failed to fetch charmander (HTTP 200)

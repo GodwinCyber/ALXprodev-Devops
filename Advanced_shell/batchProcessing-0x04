@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# ========================================
+# Script: parallel_pokemon_fetcher.sh
+# Objective: Fetch Pokémon data in parallel (max 3 concurrent processes)
+# Features: Safe exit, process limit, error handling
+# ========================================
+
+# Api basen url
+base_url="https://pokeapi.co/api/v2/pokemon/"
+output_dir="pokemon_data"
+mkdir -p "$utput_dir"
+
+# error log
+> errors.txt
+
+# pokemon list
+pokemons=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+
+# Fecth pokemon data
+fetch_pokemon() {
+    local pokemon="$1"
+    local file_path="${output_dir}/${pokemon}.json"
+
+    echo "Fectching pokemon data $pokemon..."
+
+    http_status=$(curl -s -w "%{http_code}" -o "$file_path" "${base_url}/${pokemon}")
+
+    if [ "$http_status" -eq 200 ] && jq empty "$file_path" >/dev/null 2>&1; then
+        echo "Successfully saved ${pokemon}.json"
+    else
+        echo "Failed to fetch $pokemon (HTTP $http_status)" | tee -a errors.txt
+        rm -f "$file_path"
+    fi
+}
+
+# ensure cleanup on exit (kill all the bg process)
+trap 'kill $(jobs -p) 2>/dev/null' EXIT
+
+# Fetch Pokemon in parallel, max 3 at once
+for pokemon in "${pokemons[@]}"; do
+    while [ "$(jobs -rp | wc -l)" -ge 3 ]; do
+        sleep 1
+    done
+    fetch_pokemon "$pokemon" &
+done
+# wait for all jobs to finihs
+wait
+echo ""
+echo "All pokemon data fetched successfully"
+echo "Check 'errors.txt' for failled request"
+
+
+
+
